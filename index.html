@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Shop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav>
+        <a href="#home" class="brand">My Shop</a>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#products">Products</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+    <main>
+        <section class="Category" onchange="displayProducts()">
+            <ul>
+                <li id="all">All</li>
+                <li id="car">Car</li>
+                <li id="bike">Bike</li>
+                <li id="bus">Bus</li>
+                <li id="cycle">Cycle</li>
+            </ul>
+        </section>
+        <section>
+            <select id="sort" onchange="displayProducts()">
+                <option value="default">Sort</option>
+                <option value="price-asc">Low to High</option>
+                <option value="price-desc">High to Low</option>
+                <option value="name-asc">A to Z</option>
+                <option value="name-desc">Z to A</option>
+            </select>
+            <div class="search">
+                <input type="text" id="searchInput" placeholder="Search products..." oninput="displayProducts()">
+            </div>
+        </section>
+        <h2>Products</h2>
+         <section class="products">
+        </section>
+    </main>
+    <script src="app.js">
+    </script>
+</body>
+
+</html>

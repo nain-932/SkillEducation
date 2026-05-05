@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - My Shop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav>
+        <a href="index.html" class="brand">My Shop</a>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#products">Products</a></li>
+            <li><a href="cart.html" class="cart-active">Cart</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <h1>Your Cart</h1>
+            <a href="index.html">← Continue Shopping</a>
+        </div>
+
+        <!-- Cart items injected here -->
+        <div id="cart-wrapper"></div>
+
+        <!-- Bottom section (hidden when empty) -->
+        <div class="cart-bottom" id="cart-bottom" style="display:none;">
+            <div class="cart-actions">
+                <button id="clear-cart-btn" onclick="clearCart()">🗑 Clear Cart</button>
+                <a href="index.html" class="continue-link">← Continue Shopping</a>
+            </div>
+            <div class="order-summary">
+                <h3>Order Summary</h3>
+                <div class="summary-row">
+                    <span>Items (<span id="item-count">0</span>)</span>
+                    <span class="val" id="summary-subtotal">$0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (5%)</span>
+                    <span class="val" id="summary-tax">$0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping</span>
+                    <span class="val" style="color: #27ae60;">Free</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span class="val" id="summary-total">$0</span>
+                </div>
+                <button id="checkout-btn" onclick="checkout()">Proceed to Checkout</button>
+                <p class="secure-note">🔒 Secure Checkout</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        function getCart() {
+            return JSON.parse(localStorage.getItem("cart")) || [];
+        }
+        function saveCart(cart) {
+            localStorage.setItem("cart", JSON.stringify(cart));
+        }
+
+        function renderCart() {
+            let cart = getCart();
+            const wrapper = document.getElementById("cart-wrapper");
+            const bottom  = document.getElementById("cart-bottom");
+
+            if (cart.length === 0) {
+                wrapper.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🛒</div>
+                        <h3>Your cart is empty</h3>
+                        <p>Looks like you haven't added anything yet.</p>
+                        <a href="index.html" class="shop-btn">Browse Products</a>
+                    </div>`;
+                bottom.style.display = "none";
+                return;
+            }
+
+            let rows = cart.map(item => `
+                <tr>
+                    <td>
+                        <div class="product-cell">
+                            <img src="${item.image}" alt="${item.name}"
+                                 onerror="this.src='https://via.placeholder.com/64x52?text=${encodeURIComponent(item.name)}'">
+                            <div>
+                                <div class="product-name">${item.name}</div>
+                                <div class="product-cat">${item.category}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="price-cell">$${item.price.toLocaleString()}</td>
+                    <td>
+                        <div class="qty-control">
+                            <button onclick="changeQty('${item.id}', -1)">−</button>
+                            <span>${item.qty}</span>
+                            <button onclick="changeQty('${item.id}', 1)">+</button>
+                        </div>
+                    </td>
+                    <td class="subtotal-cell">$${(item.price * item.qty).toLocaleString()}</td>
+                    <td>
+                        <button class="remove-btn" onclick="removeItem('${item.id}')" title="Remove item">✕</button>
+                    </td>
+                </tr>
+            `).join("");
+
+            wrapper.innerHTML = `
+                <div class="cart-table-wrap">
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Unit Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
+
+            // Update summary
+            let totalQty  = cart.reduce((s, c) => s + c.qty, 0);
+            let subtotal  = cart.reduce((s, c) => s + c.price * c.qty, 0);
+            let tax       = subtotal * 0.05;
+            let total     = subtotal + tax;
+
+            document.getElementById("item-count").textContent       = totalQty;
+            document.getElementById("summary-subtotal").textContent  = "$" + subtotal.toLocaleString();
+            document.getElementById("summary-tax").textContent       = "$" + tax.toFixed(2);
+            document.getElementById("summary-total").textContent     = "$" + total.toFixed(2);
+
+            bottom.style.display = "flex";
+        }
+
+        function changeQty(id, delta) {
+            let cart = getCart();
+            let item = cart.find(c => c.id === id);
+            if (!item) return;
+            item.qty += delta;
+            if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+            saveCart(cart);
+            renderCart();
+        }
+
+        function removeItem(id) {
+            let cart = getCart().filter(c => c.id !== id);
+            saveCart(cart);
+            renderCart();
+            showToast("Item removed from cart.");
+        }
+
+        function clearCart() {
+            if (!getCart().length) return;
+            if (confirm("Remove all items from cart?")) {
+                saveCart([]);
+                renderCart();
+            }
+        }
+
+        function checkout() {
+            let cart = getCart();
+            let subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+            let total    = (subtotal * 1.05).toFixed(2);
+            alert(`✅ Order Placed!\n\nTotal Paid: $${Number(total).toLocaleString()}\n\nThank you for shopping at My Shop!`);
+            saveCart([]);
+            renderCart();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            toast.textContent = msg;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 2500);
+        }
+
+        renderCart();
+    </script>
+</body>
+</html>
